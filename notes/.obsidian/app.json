@@ -1,3 +1,5 @@
 {
-  "spellcheck": false
+  "spellcheck": false,
+  "newFileLocation": "root",
+  "attachmentFolderPath": "images"
 }

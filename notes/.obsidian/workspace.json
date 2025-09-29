@@ -13,30 +13,29 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Assembly/Compilacion.md",
+                "file": "x86.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Compilacion"
+              "title": "x86"
             }
           },
           {
-            "id": "f814e5a044f8b26f",
+            "id": "621eb022d2352c57",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "MBR.md",
+                "file": "Assembly/Lenguaje.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "MBR"
+              "title": "Lenguaje"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -109,7 +108,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "MBR.md",
+                "file": "x86.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -119,7 +118,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for MBR"
+              "title": "Backlinks for x86"
             }
           },
           {
@@ -128,12 +127,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "MBR.md",
+                "file": "x86.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from MBR"
+              "title": "Outgoing links from x86"
             }
           },
           {
@@ -157,13 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "MBR.md",
+                "file": "x86.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of MBR"
+              "title": "Outline of x86"
             }
           }
         ]
@@ -184,12 +183,17 @@
       "bases:Create new base": false
     }
   },
-  "active": "f814e5a044f8b26f",
+  "active": "15e212c565575210",
   "lastOpenFiles": [
-    "Assembly/Compilacion.md",
     "Assembly/Lenguaje.md",
-    "Untitled.md",
-    "Assembly",
-    "MBR.md"
+    "x86.md",
+    "Assembly/Compilacion.md",
+    "images/Pasted image 20250929153353.png",
+    "images/Pasted image 20250929153345.png",
+    "MBR.md",
+    "Pasted image 20250929145703.png",
+    "images/Pasted image 20250929145712.png",
+    "images",
+    "Assembly"
   ]
 }
