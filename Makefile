@@ -2,7 +2,7 @@ ASM = nasm # Usar nasm para compilar assembly, esto es solo una variable
 SRC_DIR = src
 BUILD_DIR = build
 
-.PHONY: clean main_floppy
+.PHONY: clean bootloader kernel main_floppywq
 
 #
 # Image
