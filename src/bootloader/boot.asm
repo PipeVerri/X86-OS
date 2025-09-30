@@ -15,11 +15,10 @@ main:
     mov si, msg ; Seteo el offset en vez de DS ya que msg de escribe en DS al declararlo
     call print
 
+; hlt generalmente no funciona bien, por eso pongo un loop
 .stop:
-    cli
     hlt
     jmp .stop    
-
 
 ; Imprime a consola
 print:
@@ -31,7 +30,7 @@ print:
     jmp .loop
 
 .loop:
-    lodsb   ; Carga el word en DS:SI en AX e incrementa SI para que DS:SI sea el siguiente word
+    lodsb   ; Carga el word en DS:SI en AL e incrementa SI para que DS:SI sea el siguiente byte
     or al, al   ; No modifica el caracter, pero si es nulo(todo 0) entonces setea ZF=1
     jz .done   ; Salta a done si ZF=1
 
@@ -47,7 +46,7 @@ print:
     pop si
     ret
 
-msg: db 'Hello', ENDL, 0   ; Termino con el 0 para que no quede basura y siga imprimiendo
+msg: db 'Cremoso de mierda', ENDL, 0   ; Termino con el 0 para que no quede basura y siga imprimiendo. Lo declaro al final para que no lo lea como codigo
 
 times 510-($-$$) db 0 ; Un padding de 0s de 510 bytes - los usados para el programa
-dw 0AA55h ; El tag. Escrito asi por little endian
+dw 0AA55h ; El tag. Escrito asi porque NASM no entiende hexadecimal cuando empieza con una letra, y al reves por little endian
