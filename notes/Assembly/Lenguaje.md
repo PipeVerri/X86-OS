@@ -33,10 +33,3 @@ Hace que el procesador frene lo que estaba haciendo e inmediatamente pase a hace
 1. Una excepcion(division por 0, etc)
 2. Hardware(tecla apretada)
 3. Software, a traves de la instruccion INT. Esta numerada entre 0-255
-## BIOS
-Me da herramientas basicas, como la de poder mostrar texto por pantalla.
-- Interrupt 0x10 para video
-	- AH = 0x0E para escribir caracteres 
-		- AL = el caracter ASCII que quiero
-		- BH = numero de pagina
-		- BL se usa para modo grafico
