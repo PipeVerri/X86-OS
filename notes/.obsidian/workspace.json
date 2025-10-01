@@ -63,8 +63,7 @@
               "title": "x86"
             }
           }
-        ],
-        "currentTab": 3
+        ]
       }
     ],
     "direction": "vertical"
@@ -137,7 +136,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "x86.md",
+                "file": "BIOS.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -147,7 +146,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for x86"
+              "title": "Backlinks for BIOS"
             }
           },
           {
@@ -156,12 +155,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "x86.md",
+                "file": "BIOS.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from x86"
+              "title": "Outgoing links from BIOS"
             }
           },
           {
@@ -185,13 +184,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "x86.md",
+                "file": "BIOS.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of x86"
+              "title": "Outline of BIOS"
             }
           }
         ]
@@ -212,12 +211,12 @@
       "bases:Create new base": false
     }
   },
-  "active": "ac7a63921c3f0a56",
+  "active": "e229978da0e97b4a",
   "lastOpenFiles": [
-    "Fat 12.md",
     "x86.md",
-    "BIOS.md",
+    "Fat 12.md",
     "Assembly/Lenguaje.md",
+    "BIOS.md",
     "images/Pasted image 20250930150629.png",
     "images/Pasted image 20250930145843.png",
     "MBR.md",

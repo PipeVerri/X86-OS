@@ -51,13 +51,63 @@ main:
     ; Intentar leer del floppy
     mov bx, 0
     mov ax, 1 ; Segundo sector del disco
-    call read_floppy
+    ;call read_floppy
+
+    ; Debugging de la conversion de LBA a CHS
+    mov ax, 1234
+    call lba_to_chs
+    mov si, newline
     
+    mov al, ch
+    call print_hex
+    call print
+    
+    mov al, cl
+    call print_hex
+    call print
+
+    mov al, dh
+    call print_hex
+    call print
 
 ; hlt generalmente no funciona bien, por eso pongo un loop
 stop:
     hlt
     jmp stop    
+
+; Imprime un solo byte
+; Argumentos
+; - al: el byte
+print_hex:
+    push ax
+    ; Setup bios
+    mov bh, 0
+    mov ah, 0x0E
+    ; Copia
+    mov bl, al
+    ; Parte alta
+    and al, 0xF0
+    shr al, 4
+    call .print_hex_digit
+    ; Parte baja
+    mov al, bl
+    and al, 0x0F
+    call .print_hex_digit
+    ; Retorno
+    pop ax
+    ret
+.print_hex_digit:
+    cmp al, 10 ; Fijarme si es menor a 10
+    jl .print_digit ; Si es menor, saltar aca
+    jmp .print_letter
+.print_digit:
+    add al, '0' ; Convertirlo a ASCII
+    int 0x10
+    ret
+.print_letter:
+    add al, 'A' - 10 ; Convertirlo a ASCII
+    int 0x10
+    ret
 
 ; Imprime a consola
 ; Argumentos:
@@ -65,19 +115,17 @@ stop:
 print:
     ; Setup del bios
     mov bh, 0
+    mov ah, 0x0E
     ; Guarda los registros a modificar en el stack
     push si
     push ax
     jmp .loop
 .loop:
-    lodsb   ; Carga el word en DS:SI en AL e incrementa SI para que DS:SI sea el siguiente byte
+    lodsb   ; Carga el byte en DS:SI en AL e incrementa SI para que DS:SI sea el siguiente byte
     or al, al   ; No modifica el caracter, pero si es nulo(todo 0) entonces setea ZF=1
     jz .done   ; Salta a done si ZF=1
 
-    ; Imprimir el caracter
-    mov ah, 0x0e
     int 0x10
-
     jmp .loop
 .done:
     ; Retorna los valores de si y ax
@@ -126,7 +174,6 @@ lba_to_chs:
     ; Stack
     push ax
     push bx
-    push dx
     
     ; Calculo del cilindro    
     mov dx, 0   ; Seteo en 0 el resto
@@ -134,6 +181,7 @@ lba_to_chs:
     div bx  ; ax = ax / bx, dx = ax % bx
     inc dx
     mov cl, dl ; Luego hago el OR y le pongo los ultimos 2 bits del cilindro
+    and cl, 0b00111111 ; Limpiar los residuos de los ultimos 2 bits altos
     
     ; Calculo del cabezal
     mov dx, 0
@@ -141,14 +189,12 @@ lba_to_chs:
     div bx ; ax = ax / bx, dx = ax % bx
     mov dh, dl
     
-    ; Calculo del cilindro
-    mov ch, al ; Los 8 bits bajos
-    
+    ; Calculo del sector
+    mov ch, al ; Los 8 bits altos
     shl ah, 6 ; Pongo los 2 ultimos bits del cilindro en el final de ah
     or cl, ah ; Pongo los 2 ultimos bits en cl
 
     ; Returno al stack
-    pop dx
     pop bx
     pop ax
     ret
@@ -156,6 +202,7 @@ lba_to_chs:
 msg_test:   db 'Booting', ENDL, 0
 msg_read_failed: db 'Lectura fallida', ENDL, 0   ; Termino con el 0 para que no quede basura y siga imprimiendo. Lo declaro al final para que no lo lea como codigo
 msg_read_success: db 'Lectura correcta', ENDL, 0
+newline: db ENDL, 0
 
 ; Padding y signature MBR
 times 510-($-$$) db 0 ; Un padding de 0s de 510 bytes - los usados para el programa
