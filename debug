@@ -1,0 +1,14 @@
+LBA = 1234
+sector = 11 = 0b001011
+cabeza = 0 = 0b00000000
+cilindro = 34 = 0b0000100010
+
+ch = 0b00100010 = 0x22
+cl = 0b00001011 = 0x0B
+dh = 0b00000000 = 0X00
+
+salida = 05 0D 00 (ch, cl, dh)
+
+- Primer paso bien
+- Segundo paso bien
+- 

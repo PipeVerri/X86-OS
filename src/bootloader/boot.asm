@@ -53,23 +53,6 @@ main:
     mov ax, 1 ; Segundo sector del disco
     ;call read_floppy
 
-    ; Debugging de la conversion de LBA a CHS
-    mov ax, 1234
-    call lba_to_chs
-    mov si, newline
-    
-    mov al, ch
-    call print_hex
-    call print
-    
-    mov al, cl
-    call print_hex
-    call print
-
-    mov al, dh
-    call print_hex
-    call print
-
 ; hlt generalmente no funciona bien, por eso pongo un loop
 stop:
     hlt
@@ -198,6 +181,25 @@ lba_to_chs:
     pop bx
     pop ax
     ret
+
+debug_lba_to_chs:
+    mov ax, 1234
+    call lba_to_chs
+    mov si, newline
+    
+    mov al, ch
+    call print_hex
+    call print
+    
+    mov al, cl
+    call print_hex
+    call print
+
+    mov al, dh
+    call print_hex
+    call print
+    
+    jmp stop
 
 msg_test:   db 'Booting', ENDL, 0
 msg_read_failed: db 'Lectura fallida', ENDL, 0   ; Termino con el 0 para que no quede basura y siga imprimiendo. Lo declaro al final para que no lo lea como codigo
