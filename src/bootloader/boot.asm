@@ -21,7 +21,7 @@ bpb_heads_number:        dw 2
 bpb_hidden_sectors:      dd 0            ; Para cuando se usa un disco duro en vez de un floppy
 bpb_large_sector_count:  dd 0
 ; Extended boot record
-ebpb_drive_number:        dw 0            ; 0x00 para floppy, 0x80 para HDD
+ebpb_drive_number:       db 0            ; 0x00 para floppy, 0x80 para HDD
                          db 0            ; Reservado
 ebpb_signature:          dw 28h
                          dd 0            ; Ignorado
@@ -49,14 +49,83 @@ main:
     call print
 
     ; Intentar leer del floppy
-    mov bx, 0
-    mov ax, 1 ; Segundo sector del disco
-    ;call read_floppy
+    mov bl, 1  ; Numero de sectores
+    mov ax, 33 ; Segundo sector del disco
+    call read_floppy
+
+    ; Imprimir la lectura de ES:BX
+    mov al, [es:bx]
+    call print_hex
 
 ; hlt generalmente no funciona bien, por eso pongo un loop
 stop:
     hlt
-    jmp stop    
+    jmp stop
+
+; Leer un floppy
+; Argumentos:
+;  - ax: LBA address
+;  - bl: Numero de sectores
+; Retorna:
+;  - ES:BX los datos
+read_floppy:
+    call lba_to_chs ; Empiezo seteando el address CHS
+    ; Stack
+    push ax
+    push bx
+    ; BIOS
+    mov ah, 2
+    mov al, bl
+    mov dl, [ebpb_drive_number]
+    int 0x13
+    ; Fijarme si fallo
+    jc .failed_floppy
+    ; Retorno
+    mov si, msg_read_success
+    call print
+    pop bx
+    pop ax
+    ret
+.failed_floppy:
+    mov si, msg_read_failed
+    call print
+    jmp stop
+
+; Conversion de direcciones
+; Argumentos:
+;  - ax: LBA address
+; Retorna:
+;  - ch: 8 bits bajos del cilindro
+;  - cl: 6 bits del sector y los 2 bits altos del cilindro
+;  - dh: head
+lba_to_chs:
+    ; Stack
+    push ax
+    push bx
+    
+    ; Calculo del cilindro    
+    mov dx, 0   ; Seteo en 0 el resto
+    mov bx, [bpb_sectors_per_track] ; El divisor
+    div bx  ; ax = ax / bx, dx = ax % bx
+    inc dx
+    mov cl, dl ; Luego hago el OR y le pongo los ultimos 2 bits del cilindro
+    and cl, 0b00111111 ; Limpiar los residuos de los ultimos 2 bits altos
+    
+    ; Calculo del cabezal
+    mov dx, 0
+    mov bx, [bpb_heads_number]
+    div bx ; ax = ax / bx, dx = ax % bx
+    mov dh, dl
+    
+    ; Calculo del sector
+    mov ch, al ; Los 8 bits altos
+    shl ah, 6 ; Pongo los 2 ultimos bits del cilindro en el final de ah
+    or cl, ah ; Pongo los 2 ultimos bits en cl
+
+    ; Returno al stack
+    pop bx
+    pop ax
+    ret
 
 ; Imprime un solo byte
 ; Argumentos
@@ -116,74 +185,9 @@ print:
     pop si
     ret
 
-; Leer un floppy
-; Argumentos:
-;  - ax: LBA address
-;  - bl: Numero de sectores
-; Retorna:
-;  - ES:BX los datos
-read_floppy:
-    call lba_to_chs ; Empiezo seteando el address CHS
-    ; Stack
-    push ax
-    push bx
-    ; BIOS
-    mov ah, 2
-    mov al, bl
-    mov dl, [ebpb_drive_number]
-    int 0x13
-    ; Fijarme si fallo
-    jc .failed_floppy
-    jnc .failed_floppy
-    ; Retorno
-    mov si, msg_read_success
-    call print
-    pop bx
-    pop ax
-    ret
-.failed_floppy:
-    mov si, msg_read_failed
-    call print
-    jmp stop
-
-; Conversion de direcciones
-; Argumentos:
-;  - ax: LBA address
-; Retorna:
-;  - ch: 8 bits bajos del cilindro
-;  - cl: 6 bits del sector y los 2 bits altos del cilindro
-;  - dh: head
-lba_to_chs:
-    ; Stack
-    push ax
-    push bx
-    
-    ; Calculo del cilindro    
-    mov dx, 0   ; Seteo en 0 el resto
-    mov bx, [bpb_sectors_per_track] ; El divisor
-    div bx  ; ax = ax / bx, dx = ax % bx
-    inc dx
-    mov cl, dl ; Luego hago el OR y le pongo los ultimos 2 bits del cilindro
-    and cl, 0b00111111 ; Limpiar los residuos de los ultimos 2 bits altos
-    
-    ; Calculo del cabezal
-    mov dx, 0
-    mov bx, [bpb_heads_number]
-    div bx ; ax = ax / bx, dx = ax % bx
-    mov dh, dl
-    
-    ; Calculo del sector
-    mov ch, al ; Los 8 bits altos
-    shl ah, 6 ; Pongo los 2 ultimos bits del cilindro en el final de ah
-    or cl, ah ; Pongo los 2 ultimos bits en cl
-
-    ; Returno al stack
-    pop bx
-    pop ax
-    ret
-
+; Debugging de la conversion
 debug_lba_to_chs:
-    mov ax, 1234
+    mov ax, 2879
     call lba_to_chs
     mov si, newline
     
@@ -198,7 +202,7 @@ debug_lba_to_chs:
     mov al, dh
     call print_hex
     call print
-    
+
     jmp stop
 
 msg_test:   db 'Booting', ENDL, 0
