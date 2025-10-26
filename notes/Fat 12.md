@@ -9,6 +9,7 @@ Para el numero de clusters, tengo
 	- Entonces necesito que las tablas les entren 2864 * 1.5 = 4296b
 	- Eso es 4296 / 512 sectores = 9(redondeado para arriba)
 https://wiki.osdev.org/FAT#FAT_12_and_FAT_16
+# LBA y CHS
 
 ![[Pasted image 20250930145843.png]]
 Para referenciar un bloque, hay 2 formas de hacerlo:
@@ -28,4 +29,4 @@ Para hacer la conversion:
 - Es el sector 5
 - Cabeza 4
 - Cilindro 3
-
+# Fat-12

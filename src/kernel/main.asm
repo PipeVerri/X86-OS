@@ -1,8 +1,8 @@
-org 0x7e000
+org 0x0000
 bits 16
 
 main:
-    mov ax, 0
+    mov ax, 0x1000
     mov ds, ax
     mov si, success_msg
     call print

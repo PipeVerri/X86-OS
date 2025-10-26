@@ -37,7 +37,7 @@ main:
     mov ax, 0
     mov ds, ax
     ; ES
-    mov ax, 0x1000 ; Offset de 64kb
+    mov ax, 0x7e00
     mov es, ax
     ; SS
     mov ax, 0
@@ -48,34 +48,143 @@ main:
     mov si, msg_test ; Seteo el offset en vez de DS ya que msg de escribe en DS al declararlo
     call print
 
-    ; Intentar leer del floppy
-    mov bl, 1  ; Numero de sectores
-    mov ax, 33 ; Segundo sector del disco
-    call read_floppy
+    call load_kernel
 
-    ; Imprimir la lectura de ES:BX
-    mov al, [es:bx]
-    call print_hex
-
-; hlt generalmente no funciona bien, por eso pongo un loop
-stop:
+stop: ; hlt generalmente no funciona bien, por eso pongo un loop
     hlt
+    jmp stop
+
+load_kernel:
+    ; Fijarme en que cluster esta el kernel
+    call get_kernel_cluster
+    mov dx, ax ; Pongo el cluster inicial en DX temporalmente
+    ; Empiezo cargando la tabla FAT EN 0x7e00
+    ; Inicializo ES:BX
+    mov ax, 0x7e00
+    mov es, ax
+    mov bx, 0
+    ; Lo cargo
+    mov ax, [bpb_reserved_sectors] ; Empezar del bootloader para arriba
+    mov cl, [bpb_sectors_per_fat]
+    call read_floppy
+    ; Ahora quiero cargar el kernel en 0x1000
+    mov ax, 0x1000
+    mov es, ax
+    mov bx, 0
+    ; Y quiero poder acceder a la tabla FAT desde FS:SI
+    mov ax, 0x7e00
+    mov fs, ax
+    mov si, 0
+    ; Poner ax el LBA del cluster inicial
+    mov ax, dx
+    add ax, 31 ; sector_oculto + sectores_FAT * 2 + sectores_root - 2(porque los 2 primeros clusters son metadata, no son registros posta)
+    mov cl, [bpb_sectors_per_cluster]
+    call read_floppy
+    .loop_load_kernel_1:
+        ; Extraer el registro actual de la tabla FAT
+        mov si, dx
+        shr si, 4 ; SI = n / 2
+        add si, dx ; SI = n + n/2 = n * 1.5
+        ; Me fijo si extraigo la parte baja o alta del word
+        test dx, 1 ; Bitwise AND sin modificar DX, solo los flags
+        mov dx, [fs:si] ; Cargar el nuevo registro
+        jz .even_n
+    .odd_n:
+        and dx, 0x0FFF ; Tomar los 12 bits altos
+        jmp .loop_load_kernel_2
+    .even_n:
+        shr dx, 4 ; Tomar los 12 bits bajos
+    .loop_load_kernel_2:
+        ; Fijarme si es EOF o seguir leyendo
+        cmp dx, 0xFF8
+        jae .return ; Saltar si >=
+        ; Cargar el nuevo cluster en RAM
+        mov ax, dx
+        add ax, 31 ; Cluster -> LBA
+        add bx, 512 ; Sumarle el offset asi no sobre-escribe la lectura anterior
+        mov cl, [bpb_sectors_per_cluster]
+        call read_floppy
+        jmp .loop_load_kernel_1
+    .return:
+        mov si, msg_loading_success
+        call print
+        jmp 0x1000:0x0000
+
+; Retorna:
+; - AX: el cluster inicial donde se encuentra el kernel
+get_kernel_cluster:
+    ; Calcular donde empieza el sector de la tabla FAT root(hardcodeado por ahora)
+    mov ax, 19 ; sector reservado del kernel + (9 * 2) sectores de tablas FAT(es zero-index el LBA)
+    mov cl, 14 ; La tabla FAT root mide 14 sectores(numero de archivos * 32 bits / 512b de sectores)
+    mov bx, 0
+    ; Leer el floppy
+    call read_floppy
+    ; Fijarme donde esta el kernel
+    mov cx, [bpb_root_dir_count]
+    mov si, kernel_name
+    call find_file_start_cluster
+    ret
+; Argumentos
+; - ES:BX el directorio cargado
+; - DS:SI el nombre de archivo que quiero(en el formato FAT)
+; - cx la cantidad de archivos en el directorio
+; Retorna
+; - AX el cluster de memoria en el que esa
+find_file_start_cluster:
+    ; Stack
+    push bx
+    push cx
+    push dx
+    push si
+
+    cld ; Que el direction flag sea 0 para que vaya comparando moviendo DI y SI hacia adelante
+.read_register_loop:
+    ; Checkear el titulo
+    mov di, bx ; CMBSP usa DI
+    mov cx, 11
+    push si
+    repe cmpsb ; Repetir mientras ZF=1(van coincidiendo)
+    pop si
+    jz .equal_names
+    ; Si no son iguales, decrementar dx y fijarme si me pase
+    dec dx
+    je .stop ; Si es 0, frenar
+    ; Aumentar BX por 32 bits
+    add bx, 32
+    jmp .read_register_loop
+.equal_names:
+    ; Guardar la direccion 
+    mov ax, [es:bx + 26]
+    ; Debugging
+    mov si, msg_kernel_success
+    call print
+    ; Retornar y stack
+    pop si
+    pop dx
+    pop cx
+    pop bx
+    ret
+.stop:
+    mov si, msg_kernel_failed
+    call print
     jmp stop
 
 ; Leer un floppy
 ; Argumentos:
 ;  - ax: LBA address
-;  - bl: Numero de sectores
+;  - cl: Numero de sectores
 ; Retorna:
 ;  - ES:BX los datos
 read_floppy:
-    call lba_to_chs ; Empiezo seteando el address CHS
     ; Stack
     push ax
     push bx
+    push cx
+    push dx
+    call lba_to_chs ; Empiezo seteando el address CHS
     ; BIOS
     mov ah, 2
-    mov al, bl
+    mov al, cl
     mov dl, [ebpb_drive_number]
     int 0x13
     ; Fijarme si fallo
@@ -83,6 +192,8 @@ read_floppy:
     ; Retorno
     mov si, msg_read_success
     call print
+    pop dx
+    pop cx
     pop bx
     pop ax
     ret
@@ -103,7 +214,7 @@ lba_to_chs:
     push ax
     push bx
     
-    ; Calculo del cilindro    
+    ; Calculo del cilindro
     mov dx, 0   ; Seteo en 0 el resto
     mov bx, [bpb_sectors_per_track] ; El divisor
     div bx  ; ax = ax / bx, dx = ax % bx
@@ -165,12 +276,13 @@ print_hex:
 ; Argumentos:
 ;   - SI: la direccion del string
 print:
+    push ax
+    push bx
+    push si
     ; Setup del bios
     mov bh, 0
     mov ah, 0x0E
     ; Guarda los registros a modificar en el stack
-    push si
-    push ax
     jmp .loop
 .loop:
     lodsb   ; Carga el byte en DS:SI en AL e incrementa SI para que DS:SI sea el siguiente byte
@@ -181,8 +293,9 @@ print:
     jmp .loop
 .done:
     ; Retorna los valores de si y ax
-    pop ax
     pop si
+    pop bx
+    pop ax
     ret
 
 ; Debugging de la conversion
@@ -205,10 +318,14 @@ debug_lba_to_chs:
 
     jmp stop
 
-msg_test:   db 'Booting', ENDL, 0
-msg_read_failed: db 'Lectura fallida', ENDL, 0   ; Termino con el 0 para que no quede basura y siga imprimiendo. Lo declaro al final para que no lo lea como codigo
-msg_read_success: db 'Lectura correcta', ENDL, 0
+msg_test:   db 'B', ENDL, 0
+msg_read_failed: db 'FB', ENDL, 0   ; Termino con el 0 para que no quede basura y siga imprimiendo. Lo declaro al final para que no lo lea como codigo
+msg_read_success: db 'FG', ENDL, 0
+msg_kernel_failed: db 'RB', ENDL, 0
+msg_kernel_success: db 'RG', ENDL, 0
+msg_loading_success: db 'GL', ENDL, 0
 newline: db ENDL, 0
+kernel_name: db 'KERNEL  BIN'
 
 ; Padding y signature MBR
 times 510-($-$$) db 0 ; Un padding de 0s de 510 bytes - los usados para el programa
