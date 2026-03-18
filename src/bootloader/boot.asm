@@ -106,8 +106,6 @@ load_kernel:
         call read_floppy
         jmp .loop_load_kernel_1
     .return:
-        mov si, msg_loading_success
-        call print
         jmp 0x1000:0x0000
 
 ; Retorna:
@@ -155,9 +153,6 @@ find_file_start_cluster:
 .equal_names:
     ; Guardar la direccion 
     mov ax, [es:bx + 26]
-    ; Debugging
-    mov si, msg_kernel_success
-    call print
     ; Retornar y stack
     pop si
     pop dx
@@ -190,8 +185,6 @@ read_floppy:
     ; Fijarme si fallo
     jc .failed_floppy
     ; Retorno
-    mov si, msg_read_success
-    call print
     pop dx
     pop cx
     pop bx
@@ -238,40 +231,6 @@ lba_to_chs:
     pop ax
     ret
 
-; Imprime un solo byte
-; Argumentos
-; - al: el byte
-print_hex:
-    push ax
-    ; Setup bios
-    mov bh, 0
-    mov ah, 0x0E
-    ; Copia
-    mov bl, al
-    ; Parte alta
-    and al, 0xF0
-    shr al, 4
-    call .print_hex_digit
-    ; Parte baja
-    mov al, bl
-    and al, 0x0F
-    call .print_hex_digit
-    ; Retorno
-    pop ax
-    ret
-.print_hex_digit:
-    cmp al, 10 ; Fijarme si es menor a 10
-    jl .print_digit ; Si es menor, saltar aca
-    jmp .print_letter
-.print_digit:
-    add al, '0' ; Convertirlo a ASCII
-    int 0x10
-    ret
-.print_letter:
-    add al, 'A' - 10 ; Convertirlo a ASCII
-    int 0x10
-    ret
-
 ; Imprime a consola
 ; Argumentos:
 ;   - SI: la direccion del string
@@ -298,33 +257,10 @@ print:
     pop ax
     ret
 
-; Debugging de la conversion
-debug_lba_to_chs:
-    mov ax, 2879
-    call lba_to_chs
-    mov si, newline
-    
-    mov al, ch
-    call print_hex
-    call print
-    
-    mov al, cl
-    call print_hex
-    call print
-
-    mov al, dh
-    call print_hex
-    call print
-
-    jmp stop
-
-msg_test:   db 'B', ENDL, 0
-msg_read_failed: db 'FB', ENDL, 0   ; Termino con el 0 para que no quede basura y siga imprimiendo. Lo declaro al final para que no lo lea como codigo
-msg_read_success: db 'FG', ENDL, 0
-msg_kernel_failed: db 'RB', ENDL, 0
-msg_kernel_success: db 'RG', ENDL, 0
-msg_loading_success: db 'GL', ENDL, 0
-newline: db ENDL, 0
+; Termino con el 0 para que no quede basura y siga imprimiendo. Lo declaro al final para que no lo lea como codigo
+msg_test:   db 'Booting', ENDL, 0
+msg_read_failed: db 'Floppy failed', ENDL, 0
+msg_kernel_failed: db 'Finding kernel failed', ENDL, 0
 kernel_name: db 'KERNEL  BIN'
 
 ; Padding y signature MBR
