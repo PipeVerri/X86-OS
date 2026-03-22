@@ -10,26 +10,26 @@ halt:
     hlt
     jmp halt
 
-; Imprime a consola
-; Argumentos:
-;   - SI: la direccion del string
+; Print to console
+; Arguments:
+;   - SI: the string address
 print:
-    ; Setup del bios
+    ; BIOS setup
     mov bh, 0
     mov ah, 0x0E
-    ; Guarda los registros a modificar en el stack
+    ; Save registers to be modified on the stack
     push si
     push ax
     jmp .loop
 .loop:
-    lodsb   ; Carga el byte en DS:SI en AL e incrementa SI para que DS:SI sea el siguiente byte
-    or al, al   ; No modifica el caracter, pero si es nulo(todo 0) entonces setea ZF=1
-    jz .done   ; Salta a done si ZF=1
+    lodsb   ; Load the byte at DS:SI into AL and increment SI so DS:SI points to the next byte
+    or al, al   ; Does not modify the character, but if it's null (all 0) it sets ZF=1
+    jz .done   ; Jump to done if ZF=1
 
     int 0x10
     jmp .loop
 .done:
-    ; Retorna los valores de si y ax
+    ; Restore si and ax values
     pop ax
     pop si
     ret
