@@ -1,3 +1,0 @@
-- Se carga el primer sector de cada disco en la RAM, en la `0x7C00`
-- Se checkea que los ultimos bytes tengan el signature `0x55AA`
-- 

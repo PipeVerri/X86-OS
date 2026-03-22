@@ -1,2 +1,0 @@
-- Se lo lleva a un .o que es el codigo de maquina pero que aun no incluye las librerias en el mismo, las llama de otros archivos
-- El linkeo es embeber el codigo de esas librerias dentro del .o para crear el ejecutable
